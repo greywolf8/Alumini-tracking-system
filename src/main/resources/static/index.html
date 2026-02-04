@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alumni Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .endpoint-card {
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .card-header {
+            background-color: #0d6efd;
+            color: white;
+            font-weight: bold;
+        }
+        .response-area {
+            min-height: 100px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="my-4 text-center">Alumni Management System</h1>
+        
+        <!-- Add New Alumni -->
+        <div class="card endpoint-card">
+            <div class="card-header">Add New Alumni</div>
+            <div class="card-body">
+                <form id="addAlumniForm">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">First Name</label>
+                            <input type="text" class="form-control" name="firstName" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Last Name</label>
+                            <input type="text" class="form-control" name="lastName" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Graduation Year</label>
+                            <input type="number" class="form-control" name="graduationYear" required>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">Add Alumni</button>
+                        </div>
+                    </div>
+                </form>
+                <div class="response-area mt-3" id="addAlumniResponse"></div>
+            </div>
+        </div>
+
+        <!-- Get All Alumni -->
+        <div class="card endpoint-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Get All Alumni</span>
+                <button class="btn btn-sm btn-outline-light" onclick="getAllAlumni()">Fetch</button>
+            </div>
+            <div class="card-body">
+                <div class="response-area" id="allAlumniResponse">Click "Fetch" to load alumni data</div>
+            </div>
+        </div>
+
+        <!-- Get Alumni by ID -->
+        <div class="card endpoint-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Get Alumni by ID</span>
+                <div class="input-group" style="width: 300px;">
+                    <input type="number" class="form-control" id="alumniId" placeholder="Enter Alumni ID">
+                    <button class="btn btn-outline-secondary" type="button" onclick="getAlumniById()">Search</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="response-area" id="alumniByIdResponse">Enter an ID and click "Search"</div>
+            </div>
+        </div>
+
+        <!-- Update Alumni -->
+        <div class="card endpoint-card">
+            <div class="card-header">Update Alumni</div>
+            <div class="card-body">
+                <form id="updateAlumniForm">
+                    <div class="mb-3">
+                        <label class="form-label">Alumni ID</label>
+                        <input type="number" class="form-control" name="id" required>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">First Name</label>
+                            <input type="text" class="form-control" name="firstName">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Last Name</label>
+                            <input type="text" class="form-control" name="lastName">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Graduation Year</label>
+                            <input type="number" class="form-control" name="graduationYear">
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-warning">Update Alumni</button>
+                        </div>
+                    </div>
+                </form>
+                <div class="response-area mt-3" id="updateAlumniResponse"></div>
+            </div>
+        </div>
+
+        <!-- Delete Alumni -->
+        <div class="card endpoint-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Delete Alumni</span>
+                <div class="input-group" style="width: 300px;">
+                    <input type="number" class="form-control" id="deleteAlumniId" placeholder="Enter Alumni ID">
+                    <button class="btn btn-danger" type="button" onclick="deleteAlumni()">Delete</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="response-area" id="deleteAlumniResponse">Enter an ID and click "Delete"</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_BASE_URL = 'http://localhost:8080/api/v1/alumni';
+        
+        // Utility function to handle fetch errors
+        async function handleFetch(url, options = {}) {
+            try {
+                console.log(`Fetching: ${url}`, options);
+                const response = await fetch(url, options);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Server response not OK:', response.status, errorText);
+                    throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+                }
+                try {
+                    return await response.json();
+                } catch (e) {
+                    console.warn('Response was not JSON, returning as text');
+                    return await response.text();
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                throw error;
+            }
+        }
+
+        // Add new alumni
+        document.getElementById('addAlumniForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = {
+                name: `${formData.get('firstName')} ${formData.get('lastName')}`.trim(),
+                email: formData.get('email'),
+                batchYear: parseInt(formData.get('graduationYear')),
+                department: formData.get('department') || ''
+            };
+            
+            try {
+                const result = await handleFetch(API_BASE_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                document.getElementById('addAlumniResponse').textContent = JSON.stringify(result, null, 2);
+                getAllAlumni(); // Refresh the list
+            } catch (error) {
+                const errorMsg = `Error: ${error.message}\nPlease check:
+                1. Is the backend server running?
+                2. Is the API endpoint correct? (${API_BASE_URL})\n                3. Check browser's developer console (F12) for more details`;
+                console.error('Detailed error:', error);
+                document.getElementById('addAlumniResponse').textContent = errorMsg;
+            }
+        });
+
+        // Get all alumni
+        async function getAllAlumni() {
+            try {
+                const data = await handleFetch(API_BASE_URL);
+                document.getElementById('allAlumniResponse').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('allAlumniResponse').textContent = 'Error: ' + error.message;
+            }
+        }
+
+        // Get alumni by ID
+        async function getAlumniById() {
+            const id = document.getElementById('alumniId').value;
+            if (!id) {
+                document.getElementById('alumniByIdResponse').textContent = 'Please enter an ID';
+                return;
+            }
+
+            try {
+                const data = await handleFetch(`${API_BASE_URL}/${id}`);
+                document.getElementById('alumniByIdResponse').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('alumniByIdResponse').textContent = 'Error: ' + error.message;
+            }
+        }
+
+        // Update alumni
+        document.getElementById('updateAlumniForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const id = formData.get('id');
+            
+            // Prepare the update data object with correct field names
+            const updateData = {};
+            const name = formData.get('firstName') && formData.get('lastName') 
+                ? `${formData.get('firstName')} ${formData.get('lastName')}`.trim() 
+                : null;
+            
+            if (name) updateData.name = name;
+            if (formData.get('email')) updateData.email = formData.get('email');
+            if (formData.get('graduationYear')) updateData.batchYear = parseInt(formData.get('graduationYear'));
+            if (formData.get('department')) updateData.department = formData.get('department');
+            
+            if (Object.keys(updateData).length === 0) {
+                document.getElementById('updateAlumniResponse').textContent = 'Please provide at least one field to update';
+                return;
+            }
+
+            try {
+                const result = await handleFetch(`${API_BASE_URL}/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(updateData)
+                });
+                document.getElementById('updateAlumniResponse').textContent = JSON.stringify(result, null, 2);
+                getAllAlumni(); // Refresh the list
+            } catch (error) {
+                document.getElementById('updateAlumniResponse').textContent = 'Error: ' + error.message;
+            }
+        });
+
+        // Delete alumni
+        async function deleteAlumni() {
+            const id = document.getElementById('deleteAlumniId').value;
+            if (!id) {
+                document.getElementById('deleteAlumniResponse').textContent = 'Please enter an ID';
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to delete alumni with ID ${id}?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/${id}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.text();
+                document.getElementById('deleteAlumniResponse').textContent = result;
+                if (response.ok) {
+                    getAllAlumni(); // Refresh the list
+                }
+            } catch (error) {
+                document.getElementById('deleteAlumniResponse').textContent = 'Error: ' + error.message;
+            }
+        }
+
+        // Initial load
+        getAllAlumni();
+    </script>
+</body>
+</html>
